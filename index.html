@@ -287,7 +287,7 @@
                 <p>This application will download the ZIP file from GitHub, extract the SQLite database, and display the contents of the database table.</p>
                 
                 <div class="source-info">
-                    <p><strong>ZIP File URL:</strong> <a href="https://github.com/jatts/DM/blob/main/DM.db.43.0.zip?raw=true" target="_blank">https://github.com/jatts/DM/blob/main/DM.db.43.0.zip?raw=true</a></p>
+                    <p><strong>ZIP File URL:</strong> <a href="https://github.com/jatts/DM/raw/main/DM.db.43.0.zip" target="_blank">https://github.com/jatts/DM/raw/main/DM.db.43.0.zip</a></p>
                     <p><strong>Database File:</strong> DM.db</p>
                     <p><strong>Table to Display:</strong> sc_table</p>
                 </div>
@@ -396,8 +396,7 @@
                     addStatusMessage('Downloading ZIP file from GitHub...');
                     updateProgress(10);
                     
-                    // Using the raw=true URL as requested
-                    const zipUrl = 'https://github.com/jatts/DM/blob/main/DM.db.43.0.zip?raw=true';
+                    const zipUrl = 'https://github.com/jatts/DM/raw/main/DM.db.43.0.zip';
                     const response = await fetch(zipUrl);
                     
                     if (!response.ok) {
@@ -415,23 +414,13 @@
                     const zip = new JSZip();
                     await zip.loadAsync(zipData);
                     
-                    // Find the database file in the ZIP - using case-insensitive regex
-                    const dbFiles = zip.file(/\.db$/i);
-                    if (!dbFiles || dbFiles.length === 0) {
-                        throw new Error('No database files found in ZIP archive');
-                    }
-                    
-                    // Try to find the specific DM.db file first
-                    let dbFile = zip.file(/DM\.db$/i)[0];
-                    
-                    // If not found, use the first .db file found
+                    // Find the database file in the ZIP
+                    const dbFile = zip.file(/DM\.db$/i)[0];
                     if (!dbFile) {
-                        dbFile = dbFiles[0];
-                        addStatusMessage(`Using database file: ${dbFile.name} (DM.db not found)`);
-                    } else {
-                        addStatusMessage('DM.db found in ZIP archive');
+                        throw new Error('Database file not found in ZIP archive');
                     }
                     
+                    addStatusMessage('Database file found in ZIP archive');
                     updateProgress(50);
                     
                     // Extract the database file
