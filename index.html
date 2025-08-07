@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLite Database Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script>
+        // Initialize SQL.js with WebAssembly
+        function initSqlJs() {
+            return initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+            });
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: #1a2a6c;
+            font-size: 1.5rem;
+        }
+        
+        .card-title i {
+            font-size: 1.8rem;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn i {
+            font-size: 1.3rem;
+        }
+        
+        .process-steps {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .process-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            right: 50px;
+            height: 4px;
+            background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+            z-index: 1;
+        }
+        
+        .step {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+            flex: 1;
+        }
+        
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 1.5rem;
+            color: #1a2a6c;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+        .step.active .step-icon {
+            background: #1a2a6c;
+            color: white;
+        }
+        
+        .step-text {
+            font-weight: 600;
+            color: #1a2a6c;
+        }
+        
+        .progress-container {
+            margin: 30px 0;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .status-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+            border-left: 4px solid #1a2a6c;
+        }
+        
+        .status-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1a2a6c;
+        }
+        
+        .status-message {
+            margin: 5px 0;
+            padding: 8px 15px;
+            border-radius: 5px;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-message i {
+            color: #1a2a6c;
+        }
+        
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            color: white;
+            text-align: left;
+            padding: 15px;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        tr:hover {
+            background: #f1f1f1;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .process-steps {
+                flex-direction: column;
+                gap: 30px;
+            }
+            
+            .process-steps::before {
+                display: none;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-database"></i> SQLite Database Viewer</h1>
+            <p class="subtitle">Download a ZIP file containing a SQLite database, extract it, and view the table contents directly in your browser</p>
+        </header>
+        
+        <main>
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-file-archive"></i> Source Information</h2>
+                <p>This application will download the ZIP file from GitHub, extract the SQLite database, and display the contents of the database table.</p>
+                
+                <div class="source-info">
+                    <p><strong>ZIP File URL:</strong> <a href="https://github.com/jatts/DM/blob/main/DM.db.43.0.zip?raw=true" target="_blank">https://github.com/jatts/DM/blob/main/DM.db.43.0.zip?raw=true</a></p>
+                    <p><strong>Database File:</strong> DM.db</p>
+                    <p><strong>Table to Display:</strong> sc_table</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-cogs"></i> Process Control</h2>
+                
+                <div class="process-steps">
+                    <div class="step active" id="step1">
+                        <div class="step-icon"><i class="fas fa-download"></i></div>
+                        <div class="step-text">Download ZIP</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-icon"><i class="fas fa-file-zipper"></i></div>
+                        <div class="step-text">Extract Database</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-icon"><i class="fas fa-database"></i></div>
+                        <div class="step-text">Read Database</div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-icon"><i class="fas fa-table"></i></div>
+                        <div class="step-text">Display Table</div>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn" class="btn"><i class="fas fa-play"></i> Start Process</button>
+                </div>
+                
+                <div class="status-container">
+                    <div class="status-title">Process Status:</div>
+                    <div id="statusMessages"></div>
+                </div>
+            </div>
+            
+            <div class="card hidden" id="resultsCard">
+                <h2 class="card-title"><i class="fas fa-table-list"></i> Database Table: sc_table</h2>
+                <div id="tableContainer"></div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>SQLite Database Viewer &copy; 2023 | This application processes files entirely in your browser</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startBtn = document.getElementById('startBtn');
+            const statusMessages = document.getElementById('statusMessages');
+            const progressFill = document.getElementById('progressFill');
+            const resultsCard = document.getElementById('resultsCard');
+            const tableContainer = document.getElementById('tableContainer');
+            
+            // Initialize steps
+            const steps = document.querySelectorAll('.step');
+            
+            // Add status message to the container
+            function addStatusMessage(message, isError = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `status-message ${isError ? 'error' : ''}`;
+                messageDiv.innerHTML = `<i class="fas fa-${isError ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+                statusMessages.appendChild(messageDiv);
+                statusMessages.scrollTop = statusMessages.scrollHeight;
+            }
+            
+            // Update progress bar
+            function updateProgress(percent) {
+                progressFill.style.width = `${percent}%`;
+            }
+            
+            // Update step visualization
+            function updateStep(stepNumber) {
+                steps.forEach((step, index) => {
+                    if (index < stepNumber) {
+                        step.classList.add('active');
+                    } else {
+                        step.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Main processing function
+            async function processDatabase() {
+                try {
+                    // Reset UI
+                    statusMessages.innerHTML = '';
+                    updateProgress(0);
+                    updateStep(1);
+                    resultsCard.classList.add('hidden');
+                    tableContainer.innerHTML = '';
+                    startBtn.disabled = true;
+                    startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                    
+                    addStatusMessage('Starting database processing...');
+                    
+                    // Step 1: Download the ZIP file
+                    addStatusMessage('Downloading ZIP file from GitHub...');
+                    updateProgress(10);
+                    
+                    // Using the raw=true URL as requested
+                    const zipUrl = 'https://github.com/jatts/DM/blob/main/DM.db.43.0.zip?raw=true';
+                    const response = await fetch(zipUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to download ZIP file: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const zipData = await response.arrayBuffer();
+                    addStatusMessage('ZIP file downloaded successfully!');
+                    updateStep(2);
+                    updateProgress(30);
+                    
+                    // Step 2: Extract the ZIP file
+                    addStatusMessage('Extracting ZIP file...');
+                    
+                    const zip = new JSZip();
+                    await zip.loadAsync(zipData);
+                    
+                    // Find the database file in the ZIP - using case-insensitive regex
+                    const dbFiles = zip.file(/\.db$/i);
+                    if (!dbFiles || dbFiles.length === 0) {
+                        throw new Error('No database files found in ZIP archive');
+                    }
+                    
+                    // Try to find the specific DM.db file first
+                    let dbFile = zip.file(/DM\.db$/i)[0];
+                    
+                    // If not found, use the first .db file found
+                    if (!dbFile) {
+                        dbFile = dbFiles[0];
+                        addStatusMessage(`Using database file: ${dbFile.name} (DM.db not found)`);
+                    } else {
+                        addStatusMessage('DM.db found in ZIP archive');
+                    }
+                    
+                    updateProgress(50);
+                    
+                    // Extract the database file
+                    const dbData = await dbFile.async('arraybuffer');
+                    addStatusMessage('Database extracted successfully!');
+                    updateStep(3);
+                    updateProgress(70);
+                    
+                    // Step 3: Initialize SQL.js and load the database
+                    addStatusMessage('Initializing SQLite database engine...');
+                    
+                    const SQL = await initSqlJs();
+                    addStatusMessage('SQLite engine initialized');
+                    
+                    addStatusMessage('Loading database...');
+                    const db = new SQL.Database(new Uint8Array(dbData));
+                    addStatusMessage('Database loaded successfully!');
+                    updateStep(4);
+                    updateProgress(90);
+                    
+                    // Step 4: Query the database and display results
+                    addStatusMessage('Querying sc_table...');
+                    
+                    // Execute the query
+                    const result = db.exec("SELECT * FROM sc_table");
+                    
+                    if (!result.length) {
+                        throw new Error('No results found for sc_table');
+                    }
+                    
+                    const columns = result[0].columns;
+                    const rows = result[0].values;
+                    
+                    addStatusMessage(`Found ${rows.length} records in sc_table`);
+                    updateProgress(100);
+                    
+                    // Create and display the table
+                    let tableHTML = '<table>';
+                    
+                    // Create table header
+                    tableHTML += '<tr>';
+                    columns.forEach(col => {
+                        tableHTML += `<th>${col}</th>`;
+                    });
+                    tableHTML += '</tr>';
+                    
+                    // Create table rows
+                    rows.forEach(row => {
+                        tableHTML += '<tr>';
+                        row.forEach(cell => {
+                            tableHTML += `<td>${cell}</td>`;
+                        });
+                        tableHTML += '</tr>';
+                    });
+                    
+                    tableHTML += '</table>';
+                    
+                    tableContainer.innerHTML = tableHTML;
+                    resultsCard.classList.remove('hidden');
+                    addStatusMessage('Data displayed successfully!');
+                    
+                    startBtn.disabled = false;
+                    startBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Process Again';
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    addStatusMessage(`Error: ${error.message}`, true);
+                    startBtn.disabled = false;
+                    startBtn.innerHTML = '<i class="fas fa-play"></i> Try Again';
+                }
+            }
+            
+            // Event listener for the start button
+            startBtn.addEventListener('click', processDatabase);
+            
+            // Initial status message
+            addStatusMessage('Ready to start. Click "Start Process" to begin.');
+        });
+    </script>
+</body>
+</html>
