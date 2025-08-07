@@ -24,10 +24,10 @@
         }
         
         body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background: linear-gradient(135deg, #1a2a6c, #2a4365, #4a5568);
             min-height: 100vh;
             padding: 20px;
-            color: #333;
+            color: #f8f9fa;
         }
         
         .container {
@@ -38,66 +38,91 @@
         header {
             text-align: center;
             padding: 30px 0;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #63b3ed;
+            text-shadow: 0 0 15px rgba(99, 179, 237, 0.5);
         }
         
         h1 {
             font-size: 2.8rem;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, #63b3ed, #90cdf4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
         .subtitle {
             font-size: 1.2rem;
             opacity: 0.9;
             max-width: 800px;
-            margin: 0 auto;
+            margin: 0 auto 30px;
+            color: #cbd5e0;
         }
         
         .card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(26, 32, 44, 0.85);
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
             padding: 30px;
             margin-bottom: 30px;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(99, 179, 237, 0.2);
+            backdrop-filter: blur(10px);
         }
         
         .card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
         }
         
         .card-title {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            color: #1a2a6c;
-            font-size: 1.5rem;
+            gap: 15px;
+            margin-bottom: 25px;
+            color: #63b3ed;
+            font-size: 1.6rem;
         }
         
         .card-title i {
-            font-size: 1.8rem;
+            font-size: 2rem;
+            background: rgba(99, 179, 237, 0.1);
+            padding: 12px;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .btn {
-            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            background: linear-gradient(to right, #4299e1, #63b3ed);
             color: white;
             border: none;
-            padding: 12px 30px;
+            padding: 14px 35px;
             font-size: 1.1rem;
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
         
         .btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 7px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 7px 20px rgba(66, 153, 225, 0.4);
+            background: linear-gradient(to right, #3182ce, #4299e1);
         }
         
         .btn:active {
@@ -108,22 +133,32 @@
             font-size: 1.3rem;
         }
         
+        .btn.secondary {
+            background: linear-gradient(to right, #4a5568, #718096);
+            box-shadow: 0 4px 15px rgba(74, 85, 104, 0.3);
+        }
+        
+        .btn.secondary:hover {
+            background: linear-gradient(to right, #2d3748, #4a5568);
+        }
+        
         .process-steps {
             display: flex;
             justify-content: space-between;
-            margin: 30px 0;
+            margin: 40px 0;
             position: relative;
         }
         
         .process-steps::before {
             content: '';
             position: absolute;
-            top: 20px;
+            top: 24px;
             left: 50px;
             right: 50px;
             height: 4px;
-            background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+            background: linear-gradient(to right, #4299e1, #63b3ed, #90cdf4);
             z-index: 1;
+            border-radius: 2px;
         }
         
         .step {
@@ -136,25 +171,28 @@
         .step-icon {
             width: 50px;
             height: 50px;
-            background: white;
+            background: #2d3748;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 15px;
             font-size: 1.5rem;
-            color: #1a2a6c;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            color: #63b3ed;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
         }
         
         .step.active .step-icon {
-            background: #1a2a6c;
+            background: #4299e1;
             color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(66, 153, 225, 0.5);
         }
         
         .step-text {
             font-weight: 600;
-            color: #1a2a6c;
+            color: #cbd5e0;
         }
         
         .progress-container {
@@ -162,98 +200,157 @@
         }
         
         .progress-bar {
-            height: 12px;
-            background: #e0e0e0;
+            height: 14px;
+            background: #2d3748;
             border-radius: 10px;
             overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
         }
         
         .progress-fill {
             height: 100%;
-            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            background: linear-gradient(to right, #4299e1, #63b3ed);
             border-radius: 10px;
             width: 0%;
             transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(66, 153, 225, 0.5);
         }
         
         .status-container {
-            background: #f8f9fa;
+            background: rgba(45, 55, 72, 0.7);
             border-radius: 10px;
             padding: 20px;
-            margin: 20px 0;
-            min-height: 100px;
-            border-left: 4px solid #1a2a6c;
+            margin: 25px 0;
+            min-height: 120px;
+            border-left: 4px solid #4299e1;
+            max-height: 300px;
+            overflow-y: auto;
         }
         
         .status-title {
             font-weight: 600;
-            margin-bottom: 10px;
-            color: #1a2a6c;
-        }
-        
-        .status-message {
-            margin: 5px 0;
-            padding: 8px 15px;
-            border-radius: 5px;
-            background: #e9ecef;
+            margin-bottom: 15px;
+            color: #63b3ed;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             gap: 10px;
         }
         
+        .status-message {
+            margin: 8px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: rgba(74, 85, 104, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .status-message:hover {
+            background: rgba(74, 85, 104, 0.7);
+        }
+        
         .status-message i {
-            color: #1a2a6c;
+            color: #63b3ed;
+            font-size: 1.2rem;
         }
         
         .status-message.success {
-            background: #d4edda;
-            color: #155724;
+            background: rgba(72, 187, 120, 0.2);
+            border-left: 3px solid #48bb78;
+        }
+        
+        .status-message.success i {
+            color: #48bb78;
         }
         
         .status-message.error {
-            background: #f8d7da;
-            color: #721c24;
+            background: rgba(245, 101, 101, 0.2);
+            border-left: 3px solid #f56565;
+        }
+        
+        .status-message.error i {
+            color: #f56565;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
-            background: white;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: rgba(26, 32, 44, 0.9);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             border-radius: 10px;
             overflow: hidden;
+            border: 1px solid rgba(99, 179, 237, 0.2);
         }
         
         th {
-            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            background: linear-gradient(to right, #2b6cb0, #4299e1);
             color: white;
             text-align: left;
-            padding: 15px;
+            padding: 16px;
             font-weight: 600;
+            font-size: 1.1rem;
         }
         
         td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(99, 179, 237, 0.1);
+            color: #e2e8f0;
         }
         
         tr:nth-child(even) {
-            background: #f9f9f9;
+            background: rgba(45, 55, 72, 0.3);
         }
         
         tr:hover {
-            background: #f1f1f1;
+            background: rgba(66, 153, 225, 0.15);
         }
         
         .hidden {
             display: none;
         }
         
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .source-info {
+            background: rgba(45, 55, 72, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .source-info p {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .source-info strong {
+            color: #63b3ed;
+            min-width: 140px;
+            display: inline-block;
+        }
+        
+        .source-info a {
+            color: #90cdf4;
+            text-decoration: none;
+        }
+        
+        .source-info a:hover {
+            text-decoration: underline;
+        }
+        
         footer {
             text-align: center;
-            color: white;
-            padding: 20px;
+            color: #a0aec0;
+            padding: 30px 20px 20px;
             font-size: 0.9rem;
             opacity: 0.8;
         }
@@ -271,25 +368,41 @@
             h1 {
                 font-size: 2.2rem;
             }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-database"></i> SQLite Database Viewer</h1>
-            <p class="subtitle">Download a ZIP file containing a SQLite database, extract it, and view the table contents directly in your browser</p>
+            <div class="logo">
+                <i class="fas fa-database"></i>
+            </div>
+            <h1>SQLite Database Viewer</h1>
+            <p class="subtitle">Download ZIP files, extract SQLite databases, and view table contents directly in your browser</p>
         </header>
         
         <main>
             <div class="card">
                 <h2 class="card-title"><i class="fas fa-file-archive"></i> Source Information</h2>
-                <p>This application will download the ZIP file from GitHub, extract the SQLite database, and display the contents of the database table.</p>
                 
                 <div class="source-info">
-                    <p><strong>ZIP File URL:</strong> <a href="https://github.com/jatts/DM/raw/main/DM.db.43.0.zip" target="_blank">https://github.com/jatts/DM/raw/main/DM.db.43.0.zip</a></p>
+                    <p><strong>ZIP File URL:</strong> 
+                        <a href="https://github.com/jatts/DM/raw/main/DM.db.43.0.zip" target="_blank">
+                            https://github.com/jatts/DM/raw/main/DM.db.43.0.zip
+                        </a>
+                    </p>
                     <p><strong>Database File:</strong> DM.db</p>
                     <p><strong>Table to Display:</strong> sc_table</p>
+                    <p><strong>Description:</strong> This application downloads the ZIP file, extracts the SQLite database, and displays the contents of the sc_table.</p>
                 </div>
             </div>
             
@@ -303,15 +416,15 @@
                     </div>
                     <div class="step" id="step2">
                         <div class="step-icon"><i class="fas fa-file-zipper"></i></div>
-                        <div class="step-text">Extract Database</div>
+                        <div class="step-text">Extract DB</div>
                     </div>
                     <div class="step" id="step3">
                         <div class="step-icon"><i class="fas fa-database"></i></div>
-                        <div class="step-text">Read Database</div>
+                        <div class="step-text">Read DB</div>
                     </div>
                     <div class="step" id="step4">
                         <div class="step-icon"><i class="fas fa-table"></i></div>
-                        <div class="step-text">Display Table</div>
+                        <div class="step-text">Show Table</div>
                     </div>
                 </div>
                 
@@ -323,11 +436,16 @@
                 
                 <div class="controls">
                     <button id="startBtn" class="btn"><i class="fas fa-play"></i> Start Process</button>
+                    <button id="resetBtn" class="btn secondary"><i class="fas fa-redo"></i> Reset</button>
                 </div>
                 
                 <div class="status-container">
-                    <div class="status-title">Process Status:</div>
-                    <div id="statusMessages"></div>
+                    <div class="status-title"><i class="fas fa-info-circle"></i> Process Status</div>
+                    <div id="statusMessages">
+                        <div class="status-message">
+                            <i class="fas fa-info-circle"></i> Ready to begin. Click "Start Process" to load the database.
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -338,13 +456,14 @@
         </main>
         
         <footer>
-            <p>SQLite Database Viewer &copy; 2023 | This application processes files entirely in your browser</p>
+            <p>SQLite Database Viewer &copy; 2023 | All processing happens in your browser - no data is sent to any server</p>
         </footer>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
             const statusMessages = document.getElementById('statusMessages');
             const progressFill = document.getElementById('progressFill');
             const resultsCard = document.getElementById('resultsCard');
@@ -354,10 +473,10 @@
             const steps = document.querySelectorAll('.step');
             
             // Add status message to the container
-            function addStatusMessage(message, isError = false) {
+            function addStatusMessage(message, isError = false, isSuccess = false) {
                 const messageDiv = document.createElement('div');
-                messageDiv.className = `status-message ${isError ? 'error' : ''}`;
-                messageDiv.innerHTML = `<i class="fas fa-${isError ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+                messageDiv.className = `status-message ${isError ? 'error' : ''} ${isSuccess ? 'success' : ''}`;
+                messageDiv.innerHTML = `<i class="fas fa-${isError ? 'exclamation-circle' : (isSuccess ? 'check-circle' : 'info-circle')}"></i> ${message}`;
                 statusMessages.appendChild(messageDiv);
                 statusMessages.scrollTop = statusMessages.scrollHeight;
             }
@@ -378,11 +497,21 @@
                 });
             }
             
+            // Reset the UI to initial state
+            function resetUI() {
+                statusMessages.innerHTML = '<div class="status-message"><i class="fas fa-info-circle"></i> Ready to begin. Click "Start Process" to load the database.</div>';
+                updateProgress(0);
+                updateStep(1);
+                resultsCard.classList.add('hidden');
+                tableContainer.innerHTML = '';
+                startBtn.disabled = false;
+                startBtn.innerHTML = '<i class="fas fa-play"></i> Start Process';
+            }
+            
             // Main processing function
             async function processDatabase() {
                 try {
-                    // Reset UI
-                    statusMessages.innerHTML = '';
+                    // Reset UI but keep status messages
                     updateProgress(0);
                     updateStep(1);
                     resultsCard.classList.add('hidden');
@@ -390,13 +519,19 @@
                     startBtn.disabled = true;
                     startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
                     
-                    addStatusMessage('Starting database processing...');
+                    // Clear existing messages except the first one
+                    if (statusMessages.children.length > 1) {
+                        statusMessages.innerHTML = '<div class="status-message"><i class="fas fa-info-circle"></i> Starting database processing...</div>';
+                    }
                     
                     // Step 1: Download the ZIP file
                     addStatusMessage('Downloading ZIP file from GitHub...');
                     updateProgress(10);
                     
-                    const zipUrl = 'https://github.com/jatts/DM/raw/main/DM.db.43.0.zip';
+                    // Use a CORS proxy to avoid CORS issues
+                    const zipUrl = 'https://api.allorigins.win/raw?url=' + 
+                                   encodeURIComponent('https://github.com/jatts/DM/raw/main/DM.db.43.0.zip');
+                    
                     const response = await fetch(zipUrl);
                     
                     if (!response.ok) {
@@ -404,7 +539,7 @@
                     }
                     
                     const zipData = await response.arrayBuffer();
-                    addStatusMessage('ZIP file downloaded successfully!');
+                    addStatusMessage('ZIP file downloaded successfully!', false, true);
                     updateStep(2);
                     updateProgress(30);
                     
@@ -420,12 +555,12 @@
                         throw new Error('Database file not found in ZIP archive');
                     }
                     
-                    addStatusMessage('Database file found in ZIP archive');
+                    addStatusMessage('Database file found in ZIP archive', false, true);
                     updateProgress(50);
                     
                     // Extract the database file
                     const dbData = await dbFile.async('arraybuffer');
-                    addStatusMessage('Database extracted successfully!');
+                    addStatusMessage('Database extracted successfully!', false, true);
                     updateStep(3);
                     updateProgress(70);
                     
@@ -433,11 +568,11 @@
                     addStatusMessage('Initializing SQLite database engine...');
                     
                     const SQL = await initSqlJs();
-                    addStatusMessage('SQLite engine initialized');
+                    addStatusMessage('SQLite engine initialized', false, true);
                     
                     addStatusMessage('Loading database...');
                     const db = new SQL.Database(new Uint8Array(dbData));
-                    addStatusMessage('Database loaded successfully!');
+                    addStatusMessage('Database loaded successfully!', false, true);
                     updateStep(4);
                     updateProgress(90);
                     
@@ -454,7 +589,7 @@
                     const columns = result[0].columns;
                     const rows = result[0].values;
                     
-                    addStatusMessage(`Found ${rows.length} records in sc_table`);
+                    addStatusMessage(`Found ${rows.length} records in sc_table`, false, true);
                     updateProgress(100);
                     
                     // Create and display the table
@@ -480,7 +615,7 @@
                     
                     tableContainer.innerHTML = tableHTML;
                     resultsCard.classList.remove('hidden');
-                    addStatusMessage('Data displayed successfully!');
+                    addStatusMessage('Data displayed successfully!', false, true);
                     
                     startBtn.disabled = false;
                     startBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Process Again';
@@ -493,11 +628,9 @@
                 }
             }
             
-            // Event listener for the start button
+            // Event listeners
             startBtn.addEventListener('click', processDatabase);
-            
-            // Initial status message
-            addStatusMessage('Ready to start. Click "Start Process" to begin.');
+            resetBtn.addEventListener('click', resetUI);
         });
     </script>
 </body>
