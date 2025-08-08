@@ -1,126 +1,147 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>SQLite + QuaggaJS Barcode Scanner</title>
+<title>SQLite Barcode Search</title>
 <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f4; padding: 20px; }
-    button { padding: 12px 20px; margin: 5px; border: none; background: #28a745; color: white; font-size: 16px; border-radius: 5px; }
-    button:disabled { background: #888; }
-    #status { margin-top: 15px; }
-    #scanner { width: 100%; max-width: 400px; margin: 10px auto; }
-    table { margin: 20px auto; border-collapse: collapse; background: white; }
-    th, td { border: 1px solid #ccc; padding: 8px 12px; }
-    th { background: #eee; }
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+  background: #f4f4f4;
+}
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+#resultTable, #dbTables {
+  margin: 20px auto;
+  border-collapse: collapse;
+  width: 90%;
+  background: #fff;
+}
+#resultTable th, #resultTable td, #dbTables th, #dbTables td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+#scanner-container {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  z-index: 9999;
+}
+#reader {
+  width: 100%;
+  height: 100%;
+}
 </style>
+<script src="https://unpkg.com/sql.js@1.8.0/dist/sql-wasm.js"></script>
+<script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 
-<h1>SQLite + QuaggaJS Barcode Scanner</h1>
-<button id="startBtn">Start Process</button>
-<button id="scanBtn" disabled>Scan Barcode</button>
-<div id="status">Waiting...</div>
-<div id="scanner"></div>
-<div id="result"></div>
+<h1>SQLite Barcode Search</h1>
+<button id="loadDbBtn">Start Process</button>
+<button id="scanBarcodeBtn">Scan Barcode</button>
 
-<!-- Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<div id="dbTables"></div>
+<table id="resultTable"></table>
+
+<div id="scanner-container">
+  <div id="reader"></div>
+</div>
 
 <script>
-let db = null;
+let db;
 
-document.getElementById('startBtn').addEventListener('click', async () => {
-    const statusDiv = document.getElementById('status');
-    statusDiv.textContent = "Downloading ZIP...";
-    try {
-        const response = await fetch('DM.db.43.0.zip');
-        const arrayBuffer = await response.arrayBuffer();
-        statusDiv.textContent = "Unzipping...";
-        const zip = await JSZip.loadAsync(arrayBuffer);
-        const fileName = Object.keys(zip.files)[0];
-        const dbData = await zip.files[fileName].async('uint8array');
+// Load and init DB
+document.getElementById('loadDbBtn').addEventListener('click', async () => {
+  try {
+    const SQL = await initSqlJs({ locateFile: file => `https://unpkg.com/sql.js@1.8.0/dist/${file}` });
+    const response = await fetch('DM.db.43.0.zip');
+    const arrayBuffer = await response.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const dbFile = zip.file(/\.db$/i)[0];
+    const dbBuffer = await dbFile.async('arraybuffer');
+    db = new SQL.Database(new Uint8Array(dbBuffer));
 
-        statusDiv.textContent = "Loading database...";
-        const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` });
-        db = new SQL.Database(dbData);
-
-        statusDiv.textContent = "Database loaded. Click Scan to start.";
-        document.getElementById('scanBtn').disabled = false;
-    } catch (err) {
-        statusDiv.textContent = "Error: " + err.message;
-    }
-});
-
-document.getElementById('scanBtn').addEventListener('click', () => {
-    document.getElementById('result').innerHTML = "";
-    document.getElementById('status').textContent = "Scanning barcode...";
-    startQuagga();
-});
-
-function startQuagga() {
-    Quagga.init({
-        inputStream: {
-            name: "Live",
-            type: "LiveStream",
-            target: document.querySelector('#scanner'),
-            constraints: {
-                facingMode: "environment"
-            }
-        },
-        decoder: {
-            readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "upc_reader", "upc_e_reader"]
-        }
-    }, function (err) {
-        if (err) {
-            console.error(err);
-            document.getElementById('status').textContent = "Camera error: " + err;
-            return;
-        }
-        Quagga.start();
-    });
-
-    Quagga.onDetected(data => {
-        const code = data.codeResult.code;
-        document.getElementById('status').textContent = "Scanned: " + code;
-        Quagga.stop();
-        searchBarcode(code);
-    });
-}
-
-function searchBarcode(barcode) {
-    if (!db) return;
-    try {
-        const stmt = db.prepare("SELECT * FROM sc WHERE Barcode = ?");
-        stmt.bind([barcode]);
-        const rows = [];
-        while (stmt.step()) {
-            rows.push(stmt.getAsObject());
-        }
-        stmt.free();
-
-        if (rows.length) {
-            renderTable(rows);
-        } else {
-            document.getElementById('result').innerHTML = "<p>No matching record found.</p>";
-        }
-    } catch (err) {
-        document.getElementById('result').innerHTML = "<p>Error: " + err.message + "</p>";
-    }
-}
-
-function renderTable(data) {
-    let html = "<table><tr>";
-    Object.keys(data[0]).forEach(key => html += `<th>${key}</th>`);
-    html += "</tr>";
-    data.forEach(row => {
-        html += "<tr>";
-        Object.values(row).forEach(val => html += `<td>${val ?? ''}</td>`);
-        html += "</tr>";
+    // Show table list
+    const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+    let html = "<h3>Tables in DB:</h3><table id='dbTables'><tr><th>Table Name</th></tr>";
+    tables[0].values.forEach(row => {
+      html += `<tr><td>${row[0]}</td></tr>`;
     });
     html += "</table>";
-    document.getElementById('result').innerHTML = html;
+    document.getElementById('dbTables').innerHTML = html;
+
+    alert('Database loaded successfully!');
+  } catch (err) {
+    console.error(err);
+    alert('Error loading database.');
+  }
+});
+
+// Scan barcode
+document.getElementById('scanBarcodeBtn').addEventListener('click', () => {
+  if (!db) {
+    alert('Please load the database first.');
+    return;
+  }
+  document.getElementById('scanner-container').style.display = 'block';
+  const html5QrCode = new Html5Qrcode("reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      html5QrCode.stop().then(() => {
+        document.getElementById('scanner-container').style.display = 'none';
+        searchBarcode(decodedText);
+      });
+    },
+    (errorMessage) => {
+      // console.warn(`Scan error: ${errorMessage}`);
+    }
+  ).catch(err => {
+    console.error(err);
+    alert('Unable to start scanner.');
+  });
+});
+
+function searchBarcode(barcode) {
+  try {
+    const stmt = db.prepare(`
+      SELECT Barcode, Article, Percentage, OriginalPrice
+      FROM SC
+      WHERE TRIM(Barcode) = TRIM(?)
+         OR CAST(Barcode AS INTEGER) = CAST(? AS INTEGER)
+    `);
+    stmt.bind([barcode, barcode]);
+    let resultHtml = "<tr><th>Barcode</th><th>Article</th><th>Percentage</th><th>Original Price</th></tr>";
+    let found = false;
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      resultHtml += `<tr>
+        <td>${row.Barcode}</td>
+        <td>${row.Article}</td>
+        <td>${row.Percentage}</td>
+        <td>${row.OriginalPrice}</td>
+      </tr>`;
+      found = true;
+    }
+    stmt.free();
+    if (!found) {
+      resultHtml = "<tr><td colspan='4'>No matching record found.</td></tr>";
+    }
+    document.getElementById('resultTable').innerHTML = resultHtml;
+  } catch (err) {
+    console.error(err);
+    alert('Error searching barcode.');
+  }
 }
 </script>
 
