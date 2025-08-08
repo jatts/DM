@@ -92,7 +92,7 @@ function startQuagga() {
 function searchBarcode(barcode) {
     if (!db) return;
     try {
-        const stmt = db.prepare("SELECT * FROM CS WHERE Barcode = ?");
+        const stmt = db.prepare("SELECT * FROM sc WHERE Barcode = ?");
         stmt.bind([barcode]);
         const rows = [];
         while (stmt.step()) {
