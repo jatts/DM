@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SQLite ZIP Loader</title>
+<title>SQLite DB Loader + Barcode Scanner</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -21,6 +21,7 @@
         font-size: 16px;
         border-radius: 5px;
         cursor: pointer;
+        margin: 5px;
     }
     button:disabled {
         background: #888;
@@ -31,26 +32,52 @@
         font-size: 14px;
         color: #555;
     }
+    #reader {
+        width: 300px;
+        margin: 20px auto;
+    }
+    table {
+        margin: 20px auto;
+        border-collapse: collapse;
+        background: white;
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 8px 12px;
+    }
+    th {
+        background: #eee;
+    }
 </style>
 </head>
 <body>
 
-<h1>SQLite DB Loader</h1>
+<h1>SQLite DB Loader + Barcode Scanner</h1>
 <button id="startBtn">Start Process</button>
+<button id="scanBtn" disabled>Scan Barcode</button>
 <div id="status">Waiting...</div>
+<div id="reader"></div>
+<div id="result"></div>
 
+<!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
+let db = null;
+
 const startBtn = document.getElementById('startBtn');
+const scanBtn = document.getElementById('scanBtn');
 const statusDiv = document.getElementById('status');
+const resultDiv = document.getElementById('result');
 
 startBtn.addEventListener('click', async () => {
     startBtn.disabled = true;
     statusDiv.textContent = "Downloading ZIP...";
 
     try {
-        // Relative path fetch (same folder)
         const response = await fetch('DM.db.43.0.zip');
         if (!response.ok) throw new Error('HTTP error ' + response.status);
 
@@ -63,24 +90,84 @@ startBtn.addEventListener('click', async () => {
 
         statusDiv.textContent = "Loading database...";
         const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` });
-        const db = new SQL.Database(dbData);
+        db = new SQL.Database(dbData);
 
-        // Example Query
-        statusDiv.textContent = "Running query...";
-        const res = db.exec("SELECT name FROM sqlite_master WHERE type='table';");
-
-        if (res.length > 0) {
-            statusDiv.textContent = "Tables: " + res[0].values.map(v => v[0]).join(', ');
-        } else {
-            statusDiv.textContent = "No tables found.";
-        }
+        statusDiv.textContent = "Database loaded. You can now scan.";
+        scanBtn.disabled = false;
     } catch (err) {
         console.error(err);
         statusDiv.textContent = "Error: " + err.message;
-    } finally {
         startBtn.disabled = false;
     }
 });
+
+scanBtn.addEventListener('click', () => {
+    document.getElementById('reader').innerHTML = "";
+    const html5QrCode = new Html5Qrcode("reader");
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+            html5QrCode.stop().then(() => {
+                statusDiv.textContent = "Scanned: " + decodedText;
+                searchBarcode(decodedText);
+            }).catch(err => console.error("Stop failed", err));
+        },
+        (errorMessage) => {
+            // ignore scan errors
+        }
+    ).catch(err => {
+        console.error(err);
+        statusDiv.textContent = "Camera error: " + err;
+    });
+});
+
+function searchBarcode(barcode) {
+    if (!db) {
+        statusDiv.textContent = "DB not loaded!";
+        return;
+    }
+
+    try {
+        const stmt = db.prepare("SELECT * FROM CS WHERE Barcode = ?");
+        stmt.bind([barcode]);
+        const rows = [];
+        while (stmt.step()) {
+            rows.push(stmt.getAsObject());
+        }
+        stmt.free();
+
+        if (rows.length > 0) {
+            renderTable(rows);
+        } else {
+            resultDiv.innerHTML = "<p>No matching record found.</p>";
+        }
+    } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML = "<p>Error: " + err.message + "</p>";
+    }
+}
+
+function renderTable(data) {
+    if (!data.length) return;
+    let html = "<table><tr>";
+    Object.keys(data[0]).forEach(key => {
+        html += `<th>${key}</th>`;
+    });
+    html += "</tr>";
+
+    data.forEach(row => {
+        html += "<tr>";
+        Object.values(row).forEach(val => {
+            html += `<td>${val !== null ? val : ''}</td>`;
+        });
+        html += "</tr>";
+    });
+    html += "</table>";
+
+    resultDiv.innerHTML = html;
+}
 </script>
 
 </body>
