@@ -2,88 +2,42 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SQLite DB Loader + Barcode Scanner</title>
+<title>SQLite + QuaggaJS Barcode Scanner</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f4f4f4;
-        padding: 20px;
-        text-align: center;
-    }
-    h1 {
-        color: #333;
-    }
-    button {
-        background: #28a745;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        font-size: 16px;
-        border-radius: 5px;
-        cursor: pointer;
-        margin: 5px;
-    }
-    button:disabled {
-        background: #888;
-        cursor: not-allowed;
-    }
-    #status {
-        margin-top: 15px;
-        font-size: 14px;
-        color: #555;
-    }
-    #reader {
-        width: 300px;
-        margin: 20px auto;
-    }
-    table {
-        margin: 20px auto;
-        border-collapse: collapse;
-        background: white;
-        box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
-    th, td {
-        border: 1px solid #ccc;
-        padding: 8px 12px;
-    }
-    th {
-        background: #eee;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f4; padding: 20px; }
+    button { padding: 12px 20px; margin: 5px; border: none; background: #28a745; color: white; font-size: 16px; border-radius: 5px; }
+    button:disabled { background: #888; }
+    #status { margin-top: 15px; }
+    #scanner { width: 100%; max-width: 400px; margin: 10px auto; }
+    table { margin: 20px auto; border-collapse: collapse; background: white; }
+    th, td { border: 1px solid #ccc; padding: 8px 12px; }
+    th { background: #eee; }
 </style>
 </head>
 <body>
 
-<h1>SQLite DB Loader + Barcode Scanner</h1>
+<h1>SQLite + QuaggaJS Barcode Scanner</h1>
 <button id="startBtn">Start Process</button>
 <button id="scanBtn" disabled>Scan Barcode</button>
 <div id="status">Waiting...</div>
-<div id="reader"></div>
+<div id="scanner"></div>
 <div id="result"></div>
 
 <!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 
 <script>
 let db = null;
 
-const startBtn = document.getElementById('startBtn');
-const scanBtn = document.getElementById('scanBtn');
-const statusDiv = document.getElementById('status');
-const resultDiv = document.getElementById('result');
-
-startBtn.addEventListener('click', async () => {
-    startBtn.disabled = true;
+document.getElementById('startBtn').addEventListener('click', async () => {
+    const statusDiv = document.getElementById('status');
     statusDiv.textContent = "Downloading ZIP...";
-
     try {
         const response = await fetch('DM.db.43.0.zip');
-        if (!response.ok) throw new Error('HTTP error ' + response.status);
-
         const arrayBuffer = await response.arrayBuffer();
         statusDiv.textContent = "Unzipping...";
-
         const zip = await JSZip.loadAsync(arrayBuffer);
         const fileName = Object.keys(zip.files)[0];
         const dbData = await zip.files[fileName].async('uint8array');
@@ -92,43 +46,51 @@ startBtn.addEventListener('click', async () => {
         const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` });
         db = new SQL.Database(dbData);
 
-        statusDiv.textContent = "Database loaded. You can now scan.";
-        scanBtn.disabled = false;
+        statusDiv.textContent = "Database loaded. Click Scan to start.";
+        document.getElementById('scanBtn').disabled = false;
     } catch (err) {
-        console.error(err);
         statusDiv.textContent = "Error: " + err.message;
-        startBtn.disabled = false;
     }
 });
 
-scanBtn.addEventListener('click', () => {
-    document.getElementById('reader').innerHTML = "";
-    const html5QrCode = new Html5Qrcode("reader");
-
-    html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
-            html5QrCode.stop().then(() => {
-                statusDiv.textContent = "Scanned: " + decodedText;
-                searchBarcode(decodedText);
-            }).catch(err => console.error("Stop failed", err));
-        },
-        (errorMessage) => {
-            // ignore scan errors
-        }
-    ).catch(err => {
-        console.error(err);
-        statusDiv.textContent = "Camera error: " + err;
-    });
+document.getElementById('scanBtn').addEventListener('click', () => {
+    document.getElementById('result').innerHTML = "";
+    document.getElementById('status').textContent = "Scanning barcode...";
+    startQuagga();
 });
+
+function startQuagga() {
+    Quagga.init({
+        inputStream: {
+            name: "Live",
+            type: "LiveStream",
+            target: document.querySelector('#scanner'),
+            constraints: {
+                facingMode: "environment"
+            }
+        },
+        decoder: {
+            readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "upc_reader", "upc_e_reader"]
+        }
+    }, function (err) {
+        if (err) {
+            console.error(err);
+            document.getElementById('status').textContent = "Camera error: " + err;
+            return;
+        }
+        Quagga.start();
+    });
+
+    Quagga.onDetected(data => {
+        const code = data.codeResult.code;
+        document.getElementById('status').textContent = "Scanned: " + code;
+        Quagga.stop();
+        searchBarcode(code);
+    });
+}
 
 function searchBarcode(barcode) {
-    if (!db) {
-        statusDiv.textContent = "DB not loaded!";
-        return;
-    }
-
+    if (!db) return;
     try {
         const stmt = db.prepare("SELECT * FROM CS WHERE Barcode = ?");
         stmt.bind([barcode]);
@@ -138,35 +100,27 @@ function searchBarcode(barcode) {
         }
         stmt.free();
 
-        if (rows.length > 0) {
+        if (rows.length) {
             renderTable(rows);
         } else {
-            resultDiv.innerHTML = "<p>No matching record found.</p>";
+            document.getElementById('result').innerHTML = "<p>No matching record found.</p>";
         }
     } catch (err) {
-        console.error(err);
-        resultDiv.innerHTML = "<p>Error: " + err.message + "</p>";
+        document.getElementById('result').innerHTML = "<p>Error: " + err.message + "</p>";
     }
 }
 
 function renderTable(data) {
-    if (!data.length) return;
     let html = "<table><tr>";
-    Object.keys(data[0]).forEach(key => {
-        html += `<th>${key}</th>`;
-    });
+    Object.keys(data[0]).forEach(key => html += `<th>${key}</th>`);
     html += "</tr>";
-
     data.forEach(row => {
         html += "<tr>";
-        Object.values(row).forEach(val => {
-            html += `<td>${val !== null ? val : ''}</td>`;
-        });
+        Object.values(row).forEach(val => html += `<td>${val ?? ''}</td>`);
         html += "</tr>";
     });
     html += "</table>";
-
-    resultDiv.innerHTML = html;
+    document.getElementById('result').innerHTML = html;
 }
 </script>
 
