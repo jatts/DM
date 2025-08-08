@@ -2,26 +2,27 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SQLite + Barcode Scanner</title>
+<title>SQLite + QuaggaJS Barcode Scanner</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <style>
 body { font-family: Arial, sans-serif; margin: 20px; background: #f2f2f2; }
 button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
 button:hover { background: #0056b3; }
 #resultTable { border-collapse: collapse; margin-top: 15px; width: 100%; }
 #resultTable th, #resultTable td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-#reader { width: 300px; margin-top: 20px; }
+#scanner-container { width: 100%; max-width: 400px; height: 300px; background: black; margin-top: 20px; display:none; }
 </style>
 </head>
 <body>
 
-<h2>SQLite + Barcode Scanner</h2>
+<h2>SQLite + QuaggaJS Barcode Scanner</h2>
 <button onclick="startProcess()">Start Process</button>
 <button onclick="showTables()">Show Tables</button>
 <button onclick="startBarcodeScan()">Scan Barcode</button>
 
-<div id="reader" style="display:none;"></div>
+<div id="scanner-container"></div>
 <div id="output"></div>
 
 <script>
@@ -49,32 +50,41 @@ function showTables() {
 
 function startBarcodeScan() {
     if (!db) return alert("Load DB first!");
-    document.getElementById("reader").style.display = "block";
-    const html5QrCode = new Html5Qrcode("reader");
+    document.getElementById("scanner-container").style.display = "block";
 
-    const config = { 
-        fps: 10, 
-        qrbox: { width: 250, height: 100 },
-        formatsToSupport: [
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.UPC_E
-        ]
-    };
-
-    html5QrCode.start(
-        { facingMode: "environment" }, 
-        config,
-        barcode => {
-            html5QrCode.stop();
-            document.getElementById("reader").style.display = "none";
-            searchBarcode(barcode);
+    Quagga.init({
+        inputStream: {
+            type: "LiveStream",
+            target: document.querySelector('#scanner-container'),
+            constraints: {
+                facingMode: "environment"
+            }
         },
-        errorMessage => {
-            console.warn("Scanning error:", errorMessage);
+        decoder: {
+            readers: [
+                "ean_reader",
+                "ean_8_reader",
+                "code_128_reader",
+                "upc_reader",
+                "upc_e_reader"
+            ]
+        },
+        locate: true
+    }, function(err) {
+        if (err) {
+            console.error(err);
+            alert("Camera init failed: " + err);
+            return;
         }
-    );
+        Quagga.start();
+    });
+
+    Quagga.onDetected(function(result) {
+        let code = result.codeResult.code;
+        Quagga.stop();
+        document.getElementById("scanner-container").style.display = "none";
+        searchBarcode(code);
+    });
 }
 
 function searchBarcode(barcode) {
@@ -115,6 +125,5 @@ function searchBarcode(barcode) {
     }
 }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
